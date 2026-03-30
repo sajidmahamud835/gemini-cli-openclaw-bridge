@@ -1,16 +1,17 @@
-# Gemini CLI OpenClaw Bridge
+# Gemini Pro Local Bridge
 
-A lightweight local bridge that makes the Gemini CLI available through an OpenAI-compatible REST API.
+A local Gemini Pro-style bridge that exposes your Gemini CLI as an OpenAI-compatible REST API.
 
-This project solves a common problem for developers who want to connect Gemini to OpenClaw or other AI agent frameworks without relying on Google OAuth or third-party authorization flows.
-It is especially useful for developers who want a local, high-capacity Gemini-like experience without hosting limits or shared platform quotas from services like Google AI Studio.
+This project is designed for developers who want a free, local alternative to Google AI Studio limits and OAuth-based APIs.
+It enables rapid local app development, testing, and integration with OpenClaw or any other OpenAI-compatible agent framework without relying on third-party authorization.
 
 ## Why use this bridge?
 
-- Use your local Gemini CLI as a private agent endpoint for building and testing apps.
-- Avoid platform rate limits and OAuth-based access controls when you own the local runtime.
-- Enable rapid prototyping for OpenClaw, bots, code assistants, and other developer tooling.
+- Use your local Gemini CLI as a private Gemini Pro-style API for building and testing apps.
+- Avoid platform rate limits and OAuth-based access controls from Google AI Studio and other hosted services.
+- Enable rapid prototyping for OpenClaw, coding agents, bots, code assistants, and other developer tooling.
 - Keep the API endpoint internal and secure with JWT-based access tokens.
+- Build local apps with a high-capacity Gemini runtime without sharing credentials or relying on external APIs.
 
 ## Features
 
