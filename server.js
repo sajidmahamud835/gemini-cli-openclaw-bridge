@@ -1,10 +1,43 @@
 const express = require('express');
 const { spawn } = require('child_process');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_ALGORITHM = 'HS256';
+
+if (!JWT_SECRET) {
+  console.error('Missing JWT_SECRET environment variable. Set JWT_SECRET before starting the server.');
+  process.exit(1);
+}
 
 app.use(express.json());
+
+function getTokenFromRequest(req) {
+  const authHeader = req.headers.authorization;
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  return req.headers['x-api-key'] || req.headers['api-key'];
+}
+
+function authenticate(req, res, next) {
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    return res.status(401).json({ error: 'Missing API token', details: 'Use Authorization: Bearer <token> or X-API-Key header.' });
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
+    req.apiToken = payload;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid API token', details: err.message });
+  }
+}
+
+app.use(authenticate);
 
 function sanitizeMessageContent(content) {
   if (typeof content !== 'string') {
@@ -43,13 +76,18 @@ app.post('/v1/chat/completions', async (req, res) => {
       return res.status(400).json({ error: 'messages must contain valid text content' });
     }
 
-    const child = spawn('gemini', ['--prompt', prompt], {
+    const useShell = process.platform === 'win32';
+    const command = useShell ? `gemini --prompt ${JSON.stringify(prompt)}` : 'gemini';
+    const args = useShell ? [] : ['--prompt', prompt];
+
+    const child = spawn(command, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: false,
+      shell: useShell,
     });
 
     let stdout = '';
     let stderr = '';
+    let responded = false;
     const timeoutMs = 30000;
     const timeout = setTimeout(() => {
       child.kill('SIGTERM');
@@ -63,11 +101,19 @@ app.post('/v1/chat/completions', async (req, res) => {
       stderr += data.toString();
     });
 
+    const sendError = (payload) => {
+      if (responded) return;
+      responded = true;
+      clearTimeout(timeout);
+      return res.status(500).json(payload);
+    };
+
     child.on('close', (code) => {
+      if (responded) return;
       clearTimeout(timeout);
 
       if (code !== 0) {
-        return res.status(500).json({
+        return sendError({
           error: 'gemini CLI execution failed',
           details: stderr.trim() || `Exit code ${code}`,
         });
@@ -75,6 +121,7 @@ app.post('/v1/chat/completions', async (req, res) => {
 
       const assistantText = stdout.trim();
 
+      responded = true;
       return res.json({
         id: 'local-gemini-response',
         object: 'chat.completion',
@@ -94,8 +141,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     });
 
     child.on('error', (err) => {
-      clearTimeout(timeout);
-      return res.status(500).json({
+      return sendError({
         error: 'Failed to start gemini CLI',
         details: err.message,
       });

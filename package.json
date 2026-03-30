@@ -1,13 +1,25 @@
 {
   "name": "gemini-cli-openclaw-bridge",
   "version": "1.0.0",
-  "description": "Local Gemini CLI bridge for OpenClaw and OpenAI-compatible agent frameworks without Google OAuth.",
+  "description": "Local Gemini CLI bridge for OpenClaw and OpenAI-compatible agent frameworks without Google OAuth or third-party OAuth flows.",
+  "keywords": [
+    "gemini",
+    "openclaw",
+    "openai-compatible",
+    "cli",
+    "agent-bridge",
+    "jwt",
+    "local-ai",
+    "developer-tools"
+  ],
+  "license": "MIT",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.4"
+    "express": "^4.18.4",
+    "jsonwebtoken": "^9.0.3"
   }
 }

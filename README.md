@@ -3,6 +3,14 @@
 A lightweight local bridge that makes the Gemini CLI available through an OpenAI-compatible REST API.
 
 This project solves a common problem for developers who want to connect Gemini to OpenClaw or other AI agent frameworks without relying on Google OAuth or third-party authorization flows.
+It is especially useful for developers who want a local, high-capacity Gemini-like experience without hosting limits or shared platform quotas from services like Google AI Studio.
+
+## Why use this bridge?
+
+- Use your local Gemini CLI as a private agent endpoint for building and testing apps.
+- Avoid platform rate limits and OAuth-based access controls when you own the local runtime.
+- Enable rapid prototyping for OpenClaw, bots, code assistants, and other developer tooling.
+- Keep the API endpoint internal and secure with JWT-based access tokens.
 
 ## Features
 
@@ -43,7 +51,7 @@ Add a custom provider in `~/.openclaw/openclaw.json`:
     "providers": {
       "cli-bridge": {
         "baseUrl": "http://localhost:3000/v1",
-        "apiKey": "dummy-key-not-needed",
+        "apiKey": "YOUR_JWT_TOKEN",
         "api": "openai-completions",
         "models": [
           {
@@ -78,4 +86,30 @@ And switch models:
 
 ```text
 /model local-gemini
+```
+
+## JWT API Token
+
+This bridge protects the endpoint with a JSON Web Token (JWT).
+
+Set the secret before running the server:
+
+```bash
+export JWT_SECRET="your-strong-secret"
+npm start
+```
+
+Generate a token for your client:
+
+```bash
+node -e "const jwt=require('jsonwebtoken'); console.log(jwt.sign({sub:'gemini-bridge'}, process.env.JWT_SECRET, {algorithm:'HS256', expiresIn:'30d'}));"
+```
+
+Then use that token as the `apiKey` in OpenClaw or on requests directly in an `Authorization` header:
+
+```bash
+curl -X POST http://localhost:3000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{"messages":[{"role":"user","content":"Write a one-sentence greeting."}]}'
 ```
