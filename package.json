@@ -1,15 +1,15 @@
 {
-  "name": "gemini-pro-openai-bridge",
+  "name": "gemini-cli-openclaw-bridge",
   "version": "1.0.0",
-  "description": "Local Gemini Pro-style bridge for OpenAI-compatible agent frameworks, enabling self-hosted app development without Google OAuth limits.",
+  "description": "Local Gemini CLI bridge for OpenClaw and OpenAI-compatible agent frameworks without OAuth or third-party authorization.",
   "keywords": [
     "gemini",
-    "gemini-pro",
-    "openai-compatible",
-    "local-ai",
-    "self-hosted",
-    "jwt",
     "openclaw",
+    "openai-compatible",
+    "cli",
+    "agent-bridge",
+    "jwt",
+    "local-ai",
     "developer-tools"
   ],
   "license": "MIT",

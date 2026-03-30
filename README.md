@@ -1,9 +1,9 @@
-# Gemini Pro Local Bridge
+# Gemini CLI OpenClaw Bridge
 
-A local Gemini Pro-style bridge that exposes your Gemini CLI as an OpenAI-compatible REST API.
+A local Gemini CLI bridge that exposes your Gemini CLI as an OpenAI-compatible REST API for OpenClaw and other agent frameworks.
 
-This project is designed for developers who want a free, local alternative to Google AI Studio limits and OAuth-based APIs.
-It enables rapid local app development, testing, and integration with OpenClaw or any other OpenAI-compatible agent framework without relying on third-party authorization.
+This project is designed for developers who want a targeted OpenClaw integration without relying on Google OAuth or third-party authorization.
+It enables rapid local app development, testing, and integration with OpenClaw or any other OpenAI-compatible agent framework.
 
 ## Why use this bridge?
 
