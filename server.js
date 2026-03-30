@@ -9,12 +9,32 @@ const PORT = process.env.PORT || randomPort();
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ALGORITHM = 'HS256';
 
+function logEvent(event, details = {}) {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    event,
+    ...details,
+  };
+  console.log(JSON.stringify(payload));
+}
+
 if (!JWT_SECRET) {
   console.error('Missing JWT_SECRET environment variable. Set JWT_SECRET before starting the server.');
   process.exit(1);
 }
 
 app.use(express.json({ limit: '10mb' }));
+
+app.use((req, res, next) => {
+  req.requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  logEvent('request.start', {
+    requestId: req.requestId,
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+  });
+  next();
+});
 
 function getTokenFromRequest(req) {
   const authHeader = req.headers.authorization;
@@ -27,14 +47,17 @@ function getTokenFromRequest(req) {
 function authenticate(req, res, next) {
   const token = getTokenFromRequest(req);
   if (!token) {
+    logEvent('auth.failure', { requestId: req.requestId, reason: 'missing_token' });
     return res.status(401).json({ error: 'Missing API token', details: 'Use Authorization: Bearer <token> or X-API-Key header.' });
   }
 
   try {
     const payload = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
     req.apiToken = payload;
+    logEvent('auth.success', { requestId: req.requestId, sub: payload.sub || 'unknown' });
     next();
   } catch (err) {
+    logEvent('auth.failure', { requestId: req.requestId, reason: 'invalid_token', details: err.message });
     return res.status(401).json({ error: 'Invalid API token', details: err.message });
   }
 }
@@ -111,6 +134,14 @@ app.post('/v1/chat/completions', async (req, res) => {
       return res.status(400).json({ error: 'messages must contain valid text content' });
     }
 
+    logEvent('provider.request', {
+      requestId: req.requestId,
+      model: 'cli-bridge/gemini-local',
+      messageCount: messages.length,
+      promptLength: prompt.length,
+      authSub: req.apiToken?.sub || 'unknown',
+    });
+
     const useShell = process.platform === 'win32';
     const command = useShell ? `gemini --prompt ${JSON.stringify(prompt)}` : 'gemini';
     const args = useShell ? [] : ['--prompt', prompt];
@@ -149,10 +180,20 @@ app.post('/v1/chat/completions', async (req, res) => {
 
       if (code !== 0) {
         const errorInfo = parseGeminiError(stderr);
+        logEvent('provider.error', {
+          requestId: req.requestId,
+          code,
+          stderr: stderr.trim(),
+          status: errorInfo.status,
+        });
         return sendError(errorInfo.status, errorInfo.payload);
       }
 
       const assistantText = stdout.trim();
+      logEvent('provider.response', {
+        requestId: req.requestId,
+        responseLength: assistantText.length,
+      });
 
       responded = true;
       return res.json({
@@ -174,7 +215,11 @@ app.post('/v1/chat/completions', async (req, res) => {
     });
 
     child.on('error', (err) => {
-      return sendError({
+      logEvent('provider.spawn_error', {
+        requestId: req.requestId,
+        error: err.message,
+      });
+      return sendError(500, {
         error: 'Failed to start gemini CLI',
         details: err.message,
       });
