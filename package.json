@@ -1,7 +1,7 @@
 {
-  "name": "gemini-openai-bridge",
+  "name": "gemini-cli-openclaw-bridge",
   "version": "1.0.0",
-  "description": "Lightweight OpenAI-compatible REST API bridge for a local gemini CLI tool.",
+  "description": "Local Gemini CLI bridge for OpenClaw and OpenAI-compatible agent frameworks without Google OAuth.",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
