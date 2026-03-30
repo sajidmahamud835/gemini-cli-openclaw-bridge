@@ -100,17 +100,31 @@ export JWT_SECRET="your-strong-secret"
 npm start
 ```
 
-Generate a token for your client:
+Generate a token for your client and keep it in an environment variable:
 
 ```bash
-node -e "const jwt=require('jsonwebtoken'); console.log(jwt.sign({sub:'gemini-bridge'}, process.env.JWT_SECRET, {algorithm:'HS256', expiresIn:'30d'}));"
+export OPENCLAW_JWT_TOKEN=$(npm run token)
 ```
 
-Then use that token as the `apiKey` in OpenClaw or on requests directly in an `Authorization` header:
+Then configure OpenClaw with that token. If the config requires a literal value, paste the generated token into `apiKey`.
+
+```json
+"apiKey": "YOUR_JWT_TOKEN"
+```
+
+For direct API testing, use the token in the `Authorization` header:
 
 ```bash
 curl -X POST http://localhost:3000/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer $OPENCLAW_JWT_TOKEN" \
   -d '{"messages":[{"role":"user","content":"Write a one-sentence greeting."}]}'
 ```
+
+If OpenClaw supports environment interpolation in its config, use:
+
+```json
+"apiKey": "$OPENCLAW_JWT_TOKEN"
+```
+
+Otherwise, keep the token value only in your terminal environment and avoid hardcoding it in shared files.
