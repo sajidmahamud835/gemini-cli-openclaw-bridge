@@ -14,7 +14,7 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 function getTokenFromRequest(req) {
   const authHeader = req.headers.authorization;
@@ -189,6 +189,24 @@ app.post('/v1/chat/completions', async (req, res) => {
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
+});
+
+app.use((err, req, res, next) => {
+  if (err && err.type === 'entity.too.large') {
+    return res.status(413).json({
+      error: 'Payload too large',
+      details: 'The request body exceeded the server limit. Increase server limit or reduce OpenClaw context size.',
+    });
+  }
+
+  if (err) {
+    return res.status(400).json({
+      error: 'Invalid JSON payload',
+      details: err.message,
+    });
+  }
+
+  next();
 });
 
 app.listen(PORT, () => {
