@@ -4,7 +4,8 @@ const { spawn } = require('child_process');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const randomPort = () => Math.floor(Math.random() * (9000 - 4000 + 1)) + 4000;
+const PORT = process.env.PORT || randomPort();
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ALGORITHM = 'HS256';
 
@@ -51,6 +52,39 @@ function sanitizeMessageContent(content) {
     .trim();
 
   return cleaned.slice(0, 2000);
+}
+
+function parseGeminiError(stderr) {
+  const message = stderr.trim();
+  const lower = message.toLowerCase();
+
+  if (lower.includes('exhausted your capacity') || lower.includes('quota') || lower.includes('rate limit') || lower.includes('rate-limited')) {
+    return {
+      status: 429,
+      payload: {
+        error: 'Gemini rate-limited',
+        details: message || 'Gemini has hit a temporary rate/usage limit.',
+      },
+    };
+  }
+
+  if (lower.includes('timeout')) {
+    return {
+      status: 504,
+      payload: {
+        error: 'Gemini timed out',
+        details: message || 'Gemini CLI timed out while generating the response.',
+      },
+    };
+  }
+
+  return {
+    status: 500,
+    payload: {
+      error: 'gemini CLI execution failed',
+      details: message || 'Exit code indicates an unknown Gemini failure.',
+    },
+  };
 }
 
 function buildPrompt(messages) {
@@ -102,11 +136,11 @@ app.post('/v1/chat/completions', async (req, res) => {
       stderr += data.toString();
     });
 
-    const sendError = (payload) => {
+    const sendError = (status, payload) => {
       if (responded) return;
       responded = true;
       clearTimeout(timeout);
-      return res.status(500).json(payload);
+      return res.status(status).json(payload);
     };
 
     child.on('close', (code) => {
@@ -114,10 +148,8 @@ app.post('/v1/chat/completions', async (req, res) => {
       clearTimeout(timeout);
 
       if (code !== 0) {
-        return sendError({
-          error: 'gemini CLI execution failed',
-          details: stderr.trim() || `Exit code ${code}`,
-        });
+        const errorInfo = parseGeminiError(stderr);
+        return sendError(errorInfo.status, errorInfo.payload);
       }
 
       const assistantText = stdout.trim();
