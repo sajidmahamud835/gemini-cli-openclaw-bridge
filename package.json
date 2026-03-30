@@ -20,6 +20,7 @@
     "token": "node scripts/generate-token.js"
   },
   "dependencies": {
+    "dotenv": "^16.1.4",
     "express": "^4.18.4",
     "jsonwebtoken": "^9.0.3"
   }

@@ -27,6 +27,22 @@ It enables rapid local app development, testing, and integration with OpenClaw o
 npm install
 ```
 
+## Environment
+
+Copy the example env file and set your JWT secret:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then edit `.env` and set a strong `JWT_SECRET`.
+
 ## Run
 
 ```bash
