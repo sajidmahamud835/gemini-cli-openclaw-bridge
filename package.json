@@ -1,0 +1,13 @@
+{
+  "name": "gemini-openai-bridge",
+  "version": "1.0.0",
+  "description": "Lightweight OpenAI-compatible REST API bridge for a local gemini CLI tool.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.4"
+  }
+}
